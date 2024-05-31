@@ -43,12 +43,23 @@ async def get_all_servers(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     headers = {"Authorization": f"Token {api_token}"}
     response = requests.get(f"{dashboard_url}/api/v1/server/list", headers=headers)
     
+    # 打印调试信息
+    logging.info(f'API响应状态码: {response.status_code}')
+    logging.info(f'API响应内容: {response.text}')
+
     if response.status_code == 200:
-        servers = response.json()['result']
-        message = '服务器列表：\n'
-        for server in servers:
-            message += f"ID: {server['id']}, Name: {server['name']}\n"
-        await update.message.reply_text(message)
+        try:
+            servers = response.json().get('result', [])
+            if not servers:
+                await update.message.reply_text('未找到服务器信息。')
+                return
+
+            message = '服务器列表：\n'
+            for server in servers:
+                message += f"ID: {server['id']}, Name: {server['name']}\n"
+            await update.message.reply_text(message)
+        except ValueError:
+            await update.message.reply_text('解析响应失败，返回的不是有效的JSON格式。')
     else:
         await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
 
@@ -69,18 +80,30 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     headers = {"Authorization": f"Token {api_token}"}
     response = requests.get(f"{dashboard_url}/api/v1/server/details?id={server_id}", headers=headers)
     
+    # 打印调试信息
+    logging.info(f'API响应状态码: {response.status_code}')
+    logging.info(f'API响应内容: {response.text}')
+
     if response.status_code == 200:
-        server = response.json()['result'][0]
-        message = (
-            f"ID: {server['id']}\n"
-            f"Name: {server['name']}\n"
-            f"Status: {server['status']['CPU']}\n"
-            f"Uptime: {server['status']['Uptime']}\n"
-            f"CPU Usage: {server['status']['CPU']}%\n"
-            f"Memory Usage: {server['status']['MemUsed']} bytes\n"
-            f"Disk Usage: {server['status']['DiskUsed']} bytes\n"
-        )
-        await update.message.reply_text(message)
+        try:
+            servers = response.json().get('result', [])
+            if not servers:
+                await update.message.reply_text('未找到服务器信息。')
+                return
+
+            server = servers[0]
+            message = (
+                f"ID: {server['id']}\n"
+                f"Name: {server['name']}\n"
+                f"Status: {server['status']['CPU']}\n"
+                f"Uptime: {server['status']['Uptime']}\n"
+                f"CPU Usage: {server['status']['CPU']}%\n"
+                f"Memory Usage: {server['status']['MemUsed']} bytes\n"
+                f"Disk Usage: {server['status']['DiskUsed']} bytes\n"
+            )
+            await update.message.reply_text(message)
+        except ValueError:
+            await update.message.reply_text('解析响应失败，返回的不是有效的JSON格式。')
     else:
         await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
 
