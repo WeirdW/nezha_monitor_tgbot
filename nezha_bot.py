@@ -1,5 +1,6 @@
 import logging
-from telegram import Update, ParseMode
+from telegram import Update
+from telegram.constants import ParseMode  # 修改导入路径
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import requests
 
