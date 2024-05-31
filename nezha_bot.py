@@ -90,12 +90,12 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             data = response.json()
             logging.info(f'解析后的响应数据: {data}')
-            servers = data.get('result', None)
-            if not servers:
-                await update.message.reply_text('未找到服务器信息。')
-                return
+           server = data.get('result', [])
+if not server:
+    await update.message.reply_text('未找到服务器信息。')
+    return
 
-            server = servers[0]  # 取列表中的第一个元素
+server = server[0]
             message = (
                 f"ID: {server['id']}\n"
                 f"Name: {server['name']}\n"
