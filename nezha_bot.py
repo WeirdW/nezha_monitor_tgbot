@@ -90,11 +90,12 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             data = response.json()
             logging.info(f'解析后的响应数据: {data}')
-            server = data.get('result', None)
-            if not server:
+            servers = data.get('result', None)
+            if not servers:
                 await update.message.reply_text('未找到服务器信息。')
                 return
 
+            server = servers[0]  # 取列表中的第一个元素
             message = (
                 f"ID: {server['id']}\n"
                 f"Name: {server['name']}\n"
@@ -109,6 +110,7 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await update.message.reply_text('解析响应失败，返回的不是有效的JSON格式。')
     else:
         await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
+
 
 def main():
     app = ApplicationBuilder().token(API_TOKEN).build()
