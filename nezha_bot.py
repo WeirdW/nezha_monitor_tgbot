@@ -1,7 +1,8 @@
 import logging
 from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler
+from telegram.ext import Filters as filters 
 import requests
 
 # Enable logging
