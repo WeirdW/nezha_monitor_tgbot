@@ -40,16 +40,17 @@ async def get_all_servers(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    response = requests.get(f'{dashboard_url}/api/v1/server', headers={'Authorization': f'Bearer {api_token}'})
+    headers = {'Authorization': f'Token {api_token}'}
+    response = requests.get(f'{dashboard_url}/api/v1/server/list', headers=headers)
     
     if response.status_code == 200:
-        servers = response.json()
+        servers = response.json().get('result', [])
         message = '服务器列表：\n'
         for server in servers:
-            message += f"ID: {server['id']}, Name: {server['name']}\n"
+            message += f"ID: {server['id']}, Name: {server['name']}, Last Active: {server['last_active']}, IP: {server['valid_ip']}\n"
         await update.message.reply_text(message)
     else:
-        await update.message.reply_text('获取服务器信息失败，请检查你的 API Token 和 Dashboard URL。')
+        await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
 
 async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if len(context.args) != 1:
@@ -65,22 +66,23 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    response = requests.get(f'{dashboard_url}/api/v1/server/{server_id}', headers={'Authorization': f'Bearer {api_token}'})
+    headers = {'Authorization': f'Token {api_token}'}
+    response = requests.get(f'{dashboard_url}/api/v1/server/details?id={server_id}', headers=headers)
     
     if response.status_code == 200:
-        server = response.json()
+        server = response.json().get('result', [])[0]
         message = (
             f"ID: {server['id']}\n"
             f"Name: {server['name']}\n"
-            f"Status: {server['status']}\n"
-            f"Uptime: {server['uptime']}\n"
-            f"CPU Usage: {server['cpu_usage']}\n"
-            f"Memory Usage: {server['memory_usage']}\n"
-            f"Disk Usage: {server['disk_usage']}\n"
+            f"Status: {server['status']['CPU']}%\n"
+            f"Uptime: {server['status']['Uptime']} seconds\n"
+            f"CPU Usage: {server['status']['CPU']}%\n"
+            f"Memory Usage: {server['status']['MemUsed']} bytes\n"
+            f"Disk Usage: {server['status']['DiskUsed']} bytes\n"
         )
         await update.message.reply_text(message)
     else:
-        await update.message.reply_text('获取服务器信息失败，请检查服务器 ID 是否正确。')
+        await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
 
 def main():
     app = ApplicationBuilder().token(API_TOKEN).build()
