@@ -79,7 +79,7 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    headers = {"Authorization":api_token}
+    headers = {"Authorization": api_token}
     response = requests.get(f"{dashboard_url}/api/v1/server/details?id={server_id}", headers=headers)
     
     # 打印调试信息
@@ -90,12 +90,12 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             data = response.json()
             logging.info(f'解析后的响应数据: {data}')
-            server = data.get('result', [])
-            if not server:
+            servers = data.get('result', [])
+            if not servers:
                 await update.message.reply_text('未找到服务器信息。')
                 return
 
-            server = server[0]  # 获取列表中的第一个元素
+            server = servers[0]
             message = (
                 f"ID: {server['id']}\n"
                 f"Name: {server['name']}\n"
@@ -110,7 +110,6 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await update.message.reply_text('解析响应失败，返回的不是有效的JSON格式。')
     else:
         await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
-
 
 def main():
     app = ApplicationBuilder().token(API_TOKEN).build()
