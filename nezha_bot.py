@@ -40,14 +40,14 @@ async def get_all_servers(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    headers = {'Authorization': f'Token {api_token}'}
-    response = requests.get(f'{dashboard_url}/api/v1/server/list', headers=headers)
+    headers = {"Authorization": f"Token {api_token}"}
+    response = requests.get(f"{dashboard_url}/api/v1/server/list", headers=headers)
     
     if response.status_code == 200:
-        servers = response.json().get('result', [])
+        servers = response.json()['result']
         message = '服务器列表：\n'
         for server in servers:
-            message += f"ID: {server['id']}, Name: {server['name']}, Last Active: {server['last_active']}, IP: {server['valid_ip']}\n"
+            message += f"ID: {server['id']}, Name: {server['name']}\n"
         await update.message.reply_text(message)
     else:
         await update.message.reply_text(f'获取服务器信息失败，状态码：{response.status_code}，响应内容：{response.text}')
@@ -66,16 +66,16 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    headers = {'Authorization': f'Token {api_token}'}
-    response = requests.get(f'{dashboard_url}/api/v1/server/details?id={server_id}', headers=headers)
+    headers = {"Authorization": f"Token {api_token}"}
+    response = requests.get(f"{dashboard_url}/api/v1/server/details?id={server_id}", headers=headers)
     
     if response.status_code == 200:
-        server = response.json().get('result', [])[0]
+        server = response.json()['result'][0]
         message = (
             f"ID: {server['id']}\n"
             f"Name: {server['name']}\n"
-            f"Status: {server['status']['CPU']}%\n"
-            f"Uptime: {server['status']['Uptime']} seconds\n"
+            f"Status: {server['status']['CPU']}\n"
+            f"Uptime: {server['status']['Uptime']}\n"
             f"CPU Usage: {server['status']['CPU']}%\n"
             f"Memory Usage: {server['status']['MemUsed']} bytes\n"
             f"Disk Usage: {server['status']['DiskUsed']} bytes\n"
