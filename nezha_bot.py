@@ -1,102 +1,96 @@
 import logging
 from telegram import Update
-from telegram.constants import ParseMode
-from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler
-from telegram.ext import Filters as filters 
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import requests
 
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-logger = logging.getLogger(__name__)
+# 配置日志记录
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-# Dictionary to store user tokens and dashboard URLs
-user_data = {}
+API_TOKEN = "7276957363:AAGtfCeqYCLcz7RzvFF4gdDamGTwLadJzzs"
 
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Welcome to Nezha Monitor Bot! Please provide your API Token and Dashboard URL in the format:\n/token <API_TOKEN> <DASHBOARD_URL>')
+# 在这里定义全局变量来存储用户的哪吒监控信息
+user_nezha_info = {}
 
-def set_token(update: Update, context: CallbackContext) -> None:
-    try:
-        token, dashboard_url = context.args
-        user_id = update.message.chat_id
-        user_data[user_id] = {'token': token, 'dashboard_url': dashboard_url}
-        update.message.reply_text('Your API Token and Dashboard URL have been set!')
-    except ValueError:
-        update.message.reply_text('Invalid format. Please use: /token <API_TOKEN> <DASHBOARD_URL>')
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        '欢迎使用哪吒监控查询机器人！请发送你的哪吒监控 API Token 和 Dashboard 链接，格式如下：\n'
+        '/config <API Token> <Dashboard URL>'
+    )
 
-def get_all_servers(update: Update, context: CallbackContext) -> None:
-    user_id = update.message.chat_id
-    if user_id not in user_data:
-        update.message.reply_text('Please set your API Token and Dashboard URL first using /token command.')
+async def config(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if len(context.args) != 2:
+        await update.message.reply_text('格式错误！请发送 /config <API Token> <Dashboard URL>')
+        return
+    
+    api_token, dashboard_url = context.args
+    user_id = update.message.from_user.id
+    user_nezha_info[user_id] = {'api_token': api_token, 'dashboard_url': dashboard_url}
+    
+    await update.message.reply_text('配置成功！你可以使用 /all 查看所有服务器信息，使用 /id <Server ID> 查看特定服务器详情。')
+
+async def get_all_servers(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.from_user.id
+    if user_id not in user_nezha_info:
+        await update.message.reply_text('请先使用 /config 命令配置你的 API Token 和 Dashboard URL。')
         return
 
-    token = user_data[user_id]['token']
-    dashboard_url = user_data[user_id]['dashboard_url']
-    headers = {"Authorization": f"Token {token}"}
-    url = f"{dashboard_url}/api/v1/server/list"
+    api_token = user_nezha_info[user_id]['api_token']
+    dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    response = requests.get(url, headers=headers)
+    response = requests.get(f'{dashboard_url}/api/v1/server', headers={'Authorization': f'Bearer {api_token}'})
+    
     if response.status_code == 200:
-        data = response.json()
-        servers = data.get('result', [])
-        message = ''
+        servers = response.json()
+        message = '服务器列表：\n'
         for server in servers:
-            message += f"Server Name: {server['name']}, Last Active: {server['last_active']}, IP: {server['valid_ip']}\n"
-        update.message.reply_text(message or "No servers found.")
+            message += f"ID: {server['id']}, Name: {server['name']}\n"
+        await update.message.reply_text(message)
     else:
-        update.message.reply_text('Failed to retrieve server list.')
+        await update.message.reply_text('获取服务器信息失败，请检查你的 API Token 和 Dashboard URL。')
 
-def get_server_details(update: Update, context: CallbackContext) -> None:
-    user_id = update.message.chat_id
-    if user_id not in user_data:
-        update.message.reply_text('Please set your API Token and Dashboard URL first using /token command.')
+async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if len(context.args) != 1:
+        await update.message.reply_text('格式错误！请发送 /id <Server ID>')
         return
 
-    try:
-        server_id = context.args[0]
-    except IndexError:
-        update.message.reply_text('Please provide a server ID.')
+    user_id = update.message.from_user.id
+    if user_id not in user_nezha_info:
+        await update.message.reply_text('请先使用 /config 命令配置你的 API Token 和 Dashboard URL。')
         return
 
-    token = user_data[user_id]['token']
-    dashboard_url = user_data[user_id]['dashboard_url']
-    headers = {"Authorization": f"Token {token}"}
-    url = f"{dashboard_url}/api/v1/server/details?id={server_id}"
+    server_id = context.args[0]
+    api_token = user_nezha_info[user_id]['api_token']
+    dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    response = requests.get(url, headers=headers)
+    response = requests.get(f'{dashboard_url}/api/v1/server/{server_id}', headers={'Authorization': f'Bearer {api_token}'})
+    
     if response.status_code == 200:
-        data = response.json()
-        server = data.get('result', [])[0]
-        message = (f"Server Name: {server['name']}\n"
-                   f"CPU Usage: {server['status']['CPU']}%\n"
-                   f"Memory Used: {server['status']['MemUsed']} bytes\n"
-                   f"Disk Used: {server['status']['DiskUsed']} bytes\n"
-                   f"Network In Speed: {server['status']['NetInSpeed']} bytes/s\n"
-                   f"Network Out Speed: {server['status']['NetOutSpeed']} bytes/s")
-        update.message.reply_text(message)
+        server = response.json()
+        message = (
+            f"ID: {server['id']}\n"
+            f"Name: {server['name']}\n"
+            f"Status: {server['status']}\n"
+            f"Uptime: {server['uptime']}\n"
+            f"CPU Usage: {server['cpu_usage']}\n"
+            f"Memory Usage: {server['memory_usage']}\n"
+            f"Disk Usage: {server['disk_usage']}\n"
+        )
+        await update.message.reply_text(message)
     else:
-        update.message.reply_text('Failed to retrieve server details.')
+        await update.message.reply_text('获取服务器信息失败，请检查服务器 ID 是否正确。')
 
-def error(update: Update, context: CallbackContext) -> None:
-    """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, context.error)
+def main():
+    app = ApplicationBuilder().token(API_TOKEN).build()
 
-def main() -> None:
-    # Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
-    updater = Updater("7276957363:AAGtfCeqYCLcz7RzvFF4gdDamGTwLadJzzs", use_context=True)
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("config", config))
+    app.add_handler(CommandHandler("all", get_all_servers))
+    app.add_handler(CommandHandler("id", get_server_by_id))
 
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("token", set_token))
-    dp.add_handler(CommandHandler("all", get_all_servers))
-    dp.add_handler(CommandHandler("id", get_server_details, pass_args=True))
-
-    dp.add_error_handler(error)
-
-    updater.start_polling()
-    updater.idle()
+    app.run_polling()
 
 if __name__ == '__main__':
     main()
