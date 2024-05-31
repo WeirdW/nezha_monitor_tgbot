@@ -79,7 +79,7 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    headers = {"Authorization": api_token}
+    headers = {"Authorization":api_token}
     response = requests.get(f"{dashboard_url}/api/v1/server/details?id={server_id}", headers=headers)
     
     # 打印调试信息
@@ -90,16 +90,16 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             data = response.json()
             logging.info(f'解析后的响应数据: {data}')
-           server = data.get('result', [])
-if not server:
-    await update.message.reply_text('未找到服务器信息。')
-    return
+            server = data.get('result', [])
+            if not server:
+                await update.message.reply_text('未找到服务器信息。')
+                return
 
-server = server[0]
+            server = server[0]  # 获取列表中的第一个元素
             message = (
                 f"ID: {server['id']}\n"
                 f"Name: {server['name']}\n"
-                f"Status: {server['status']['CPU']}%\n"
+                f"Status: {server['status']['CPU']}\n"
                 f"Uptime: {server['status']['Uptime']}\n"
                 f"CPU Usage: {server['status']['CPU']}%\n"
                 f"Memory Usage: {server['status']['MemUsed']} bytes\n"
