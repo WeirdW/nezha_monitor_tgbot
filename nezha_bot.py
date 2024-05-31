@@ -49,7 +49,9 @@ async def get_all_servers(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if response.status_code == 200:
         try:
-            servers = response.json().get('result', [])
+            data = response.json()
+            logging.info(f'解析后的响应数据: {data}')
+            servers = data.get('result', [])
             if not servers:
                 await update.message.reply_text('未找到服务器信息。')
                 return
@@ -86,7 +88,9 @@ async def get_server_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     if response.status_code == 200:
         try:
-            servers = response.json().get('result', [])
+            data = response.json()
+            logging.info(f'解析后的响应数据: {data}')
+            servers = data.get('result', [])
             if not servers:
                 await update.message.reply_text('未找到服务器信息。')
                 return
