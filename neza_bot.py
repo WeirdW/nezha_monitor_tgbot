@@ -82,7 +82,7 @@ def error(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     # Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
-    updater = Updater("YOUR_TELEGRAM_BOT_TOKEN", use_context=True)
+    updater = Updater("7276957363:AAGtfCeqYCLcz7RzvFF4gdDamGTwLadJzzs", use_context=True)
 
     dp = updater.dispatcher
 
