@@ -40,7 +40,7 @@ async def get_all_servers(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     api_token = user_nezha_info[user_id]['api_token']
     dashboard_url = user_nezha_info[user_id]['dashboard_url']
     
-    headers = {"Authorization":f"{api_token}"}
+    headers = {"Authorization":api_token}
     response = requests.get(f"{dashboard_url}/api/v1/server/list", headers=headers)
     
     # 打印调试信息
