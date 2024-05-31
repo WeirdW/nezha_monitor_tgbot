@@ -9,7 +9,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-API_TOKEN = "7276957363:AAGtfCeqYCLcz7RzvFF4gdDamGTwLadJzzs"
+API_TOKEN = "TG BOT API TOKEN"
 
 # 在这里定义全局变量来存储用户的哪吒监控信息
 user_nezha_info = {}
